@@ -1,0 +1,11 @@
+{
+  "name": "figaudio-by-weathercat",
+  "version": "1.0.0",
+  "description": "Gerador de figurinhas com audio para WhatsApp",
+  "main": "enviar.js",
+  "dependencies": {
+    "@whiskeysockets/baileys": "latest",
+    "pino": "latest",
+    "qrcode-terminal": "latest"
+  }
+}
