@@ -1,12 +1,24 @@
-﻿const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, prepareWAMessageMedia, generateWAMessageFromContent, proto } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, prepareWAMessageMedia, generateWAMessageFromContent, proto } = require('@whiskeysockets/baileys');
 const qrcode = require('qrcode-terminal');
 const fs = require('fs');
 const crypto = require('crypto');
 const pino = require('pino');
 
+const filtrarLogsSignal = (metodoOriginal) => function (...args) {
+    const msg = String(args[0] || '');
+    if (msg.includes('Closing open session') || msg.includes('Closing session')) {
+        return;
+    }
+    metodoOriginal.apply(console, args);
+};
+
+console.log = filtrarLogsSignal(console.log);
+console.info = filtrarLogsSignal(console.info);
+console.warn = filtrarLogsSignal(console.warn);
+
 const args = process.argv.slice(2);
-const NOME_PACOTE = args.at(0) || "vendo fig com audio no pix 3 conto 😂";
-const AUTOR_PACOTE = args.at(1) || "@weathercat";
+const NOME_PACOTE = args[0] || "vendo fig com audio no pix 3 conto 😂";
+const AUTOR_PACOTE = args[1] || "@weathercat";
 
 if (!fs.existsSync('figurinha.webp') || !fs.existsSync('audio.ogg')) {
     console.error('❌ Rode "node preparar.js <video>" primeiro!');
@@ -27,20 +39,21 @@ function adicionarExifWhatsApp(caminhoWebp, packName, authorName) {
         "sticker-pack-id": crypto.randomBytes(16).toString('hex'),
         "sticker-pack-name": packName,
         "sticker-pack-publisher": authorName,
-        "emojis": new Array("😀")
+        "emojis": ["😀"]
     };
 
-    const exifAttr = Buffer.from(new Array(0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x41, 0x57, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x00));
+    const exifAttr = Buffer.from([0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x41, 0x57, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x00]);
     const jsonBuff = Buffer.from(JSON.stringify(json), "utf-8");
-    const exif = Buffer.concat(new Array(exifAttr, jsonBuff));
+    const exif = Buffer.concat([exifAttr, jsonBuff]);
     exif.writeUIntLE(jsonBuff.length, 14, 4);
 
     const chunkHeader = Buffer.alloc(8);
     chunkHeader.write("EXIF", 0);
     chunkHeader.writeUInt32LE(exif.length, 4);
 
-    const pad = exif.length % 2 === 1 ? Buffer.from(new Array(0x00)) : Buffer.alloc(0);
-    const novoWebp = Buffer.concat(new Array(webpBuffer, chunkHeader, exif, pad));
+    // Corrigido: Buffer.from([0x00]) garante 1 byte de padding quando o tamanho for ímpar
+    const pad = exif.length % 2 === 1 ? Buffer.from([0x00]) : Buffer.alloc(0);
+    const novoWebp = Buffer.concat([webpBuffer, chunkHeader, exif, pad]);
     novoWebp.writeUInt32LE(novoWebp.length - 8, 4);
 
     fs.writeFileSync(caminhoWebp, novoWebp);
@@ -63,7 +76,7 @@ async function enviar() {
         version,
         auth: state,
         logger: pino({ level: 'silent' }),
-        browser: new Array('Windows', 'Chrome', '110.0.0')
+        browser: ['Windows', 'Chrome', '110.0.0']
     });
 
     sock.ev.on('creds.update', saveCreds);
