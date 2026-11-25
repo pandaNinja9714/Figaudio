@@ -46,7 +46,7 @@ try {
         tamanhoKB = gerarWebp(qualidadeUsada);
     }
 
-    execSync(`ffmpeg -y -i "${ARQUIVO_ENTRADA}" -ss ${INICIO_SEGUNDOS} -t ${DURACAO_SEGUNDOS} -vn -af "asetpts=PTS-STARTPTS" -c:a libopus -ac 1 -ar 48000 -b:a 32k audio.ogg`, { stdio: 'ignore' });
+    execSync(`ffmpeg -y -ss ${INICIO_SEGUNDOS} -i "${ARQUIVO_ENTRADA}" -t ${DURACAO_SEGUNDOS} -vn -af "aresample=async=1,asetpts=PTS-STARTPTS" -c:a libopus -application voip -vbr off -ac 1 -ar 48000 -b:a 24k audio.ogg`, { stdio: 'ignore' });
 
     const duracaoReal = parseFloat(execSync('ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 audio.ogg').toString().trim());
 
